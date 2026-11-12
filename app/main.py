@@ -1,133 +1,236 @@
 import argparse
 import json
-import os
-import sys
+import logging
+import time
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
-import httpx
-from dotenv import load_dotenv
+from app.config import setup_logger
+from app.config.settings import APP_DIR, load_settings
+from app.services.query_catalog import load_catalog
+from app.services.wordstat_client import (
+    WordStatClient,
+    WordStatError,
+)
 
 
-URL = "https://searchapi.api.cloud.yandex.net/v2/wordstat/topRequests"
+logger = setup_logger(__name__)
 
 
-def main() -> int:
-    load_dotenv()
-
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Прототип Wordstat через Yandex Cloud."
+        description="Сбор статистики Wordstat по JSON-каталогу."
+    )
+
+    parser.add_argument(
+        "--catalog",
+        type=Path,
+        default=APP_DIR / "data" / "queries.json",
+        help="Путь к JSON-каталогу.",
     )
     parser.add_argument(
-        "--phrase",
-        default="купить квартиру",
-        help="Поисковая фраза.",
+        "--category",
+        help="Выбрать категорию по ID.",
     )
     parser.add_argument(
-        "--limit",
+        "--query-id",
+        help="Выбрать одну фразу по ID.",
+    )
+    parser.add_argument(
+        "--include-disabled",
+        action="store_true",
+        help="Показать отключённые фразы. Только без --execute.",
+    )
+    parser.add_argument(
+        "--max-queries",
+        type=int,
+        help="Ограничить количество выбранных фраз.",
+    )
+    parser.add_argument(
+        "--top-limit",
         type=int,
         default=10,
-        help="Количество фраз в ответе: от 1 до 2000.",
+        help="Количество результатов topRequests для каждой фразы.",
     )
     parser.add_argument(
-        "--regions",
-        nargs="+",
-        help="ID регионов. Если не указаны — все регионы.",
+        "--delay",
+        type=float,
+        default=1.0,
+        help="Пауза между запросами в секундах.",
     )
-    args = parser.parse_args()
-
-    if not args.phrase.strip():
-        parser.error("--phrase не может быть пустой.")
-
-    if not 1 <= args.limit <= 2000:
-        parser.error("--limit должен быть от 1 до 2000.")
-
-    env_path = Path(__file__).resolve().parent / ".env"
-    load_dotenv(dotenv_path=env_path, override=True)
-
-    api_key = os.getenv("YANDEX_API_KEY", "").strip()
-    folder_id = os.getenv("YANDEX_FOLDER_ID", "").strip()
-
-    print("Файл настроек:", env_path)
-    print("Файл существует:", env_path.is_file())
-    print("Folder ID:", folder_id)
-    print("Ключ задан:", bool(api_key))
-    print("Длина ключа:", len(api_key))
-    print("Последние 4 символа:", api_key[-4:] if api_key else "—")
-
-    if not api_key or not folder_id:
-        print(
-            "Укажи YANDEX_API_KEY и YANDEX_FOLDER_ID в .env.",
-            file=sys.stderr,
-        )
-        return 1
-
-    payload = {
-        "phrase": args.phrase.strip(),
-        "numPhrases": args.limit,
-        "devices": ["DEVICE_ALL"],
-        "folderId": folder_id,
-    }
-
-    if args.regions:
-        payload["regions"] = args.regions
-
-    print(f"POST {URL}")
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-
-    try:
-        with httpx.Client(
-            timeout=httpx.Timeout(60.0, connect=15.0),
-            trust_env=False,
-        ) as client:
-            response = client.post(
-                URL,
-                headers={
-                    "Authorization": f"Api-Key {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-            )
-    except httpx.RequestError as exc:
-        print(f"\nОшибка соединения: {exc}", file=sys.stderr)
-        return 1
-
-    print(f"\nHTTP {response.status_code}")
-
-    try:
-        data = response.json()
-    except ValueError:
-        print(response.text[:4000], file=sys.stderr)
-        return 1
-
-    print(json.dumps(data, ensure_ascii=False, indent=2))
-
-    if not response.is_success:
-        return 1
-
-    now = datetime.now(timezone.utc)
-    output_dir = Path("output")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    output_file = output_dir / (
-        f"wordstat_top_{now.strftime('%Y%m%dT%H%M%S_%fZ')}.json"
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Отправить выбранные фразы в API.",
     )
 
-    output_file.write_text(
-        json.dumps(
-            {
-                "collected_at": now.isoformat(),
-                "request": payload,
-                "response": data,
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
+    return parser
+
+
+def save_json(path: Path, document: dict) -> None:
+    path.write_text(
+        json.dumps(document, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    print(f"\nСохранено: {output_file}")
-    return 0
+
+def main() -> int:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    )
+
+    parser = build_parser()
+    args = parser.parse_args()
+
+    if args.max_queries is not None and args.max_queries < 1:
+        parser.error("--max-queries должен быть больше нуля.")
+
+    if not 1 <= args.top_limit <= 2000:
+        parser.error("--top-limit должен быть от 1 до 2000.")
+
+    if not 0 <= args.delay <= 3600:
+        parser.error("--delay должен быть от 0 до 3600.")
+
+    if args.execute and args.include_disabled:
+        parser.error(
+            "--include-disabled разрешён только для просмотра."
+        )
+
+    try:
+        catalog = load_catalog(args.catalog)
+
+        selected = catalog.select(
+            category_id=args.category,
+            query_id=args.query_id,
+            include_disabled=args.include_disabled,
+        )
+
+        if args.max_queries is not None:
+            selected = selected[:args.max_queries]
+
+        category_names = {
+            category.id: category.name
+            for category in catalog.categories
+        }
+
+        print(f"Каталог: {args.catalog}")
+        print(f"Всего фраз: {len(catalog.queries)}")
+        print(f"Выбрано: {len(selected)}")
+
+        for query in selected:
+            status = "включён" if query.enabled else "отключён"
+            print(
+                f"[{query.id}] {query.phrase} "
+                f"| {category_names[query.category_id]} "
+                f"| {status}"
+            )
+
+        if not selected:
+            print("\nНет фраз для обработки.")
+            return 0
+
+        if not args.execute:
+            print("\nРежим просмотра. API не вызывается.")
+            print("Для отправки добавь --execute.")
+            return 0
+
+        settings = load_settings()
+
+        run_id = (
+            datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            + "_"
+            + uuid4().hex[:8]
+        )
+        run_dir = APP_DIR / "output" / run_id
+        run_dir.mkdir(parents=True, exist_ok=False)
+
+        save_json(
+            run_dir / "selection.json",
+            {
+                "catalog_version": catalog.version,
+                "categories": [
+                    asdict(category)
+                    for category in catalog.categories
+                ],
+                "queries": [asdict(query) for query in selected],
+                "method": "topRequests",
+                "top_limit": args.top_limit,
+                "region_filter": None,
+            },
+        )
+
+        completed = 0
+
+        with WordStatClient(
+            api_key=settings.api_key,
+            folder_id=settings.folder_id,
+            timeout_seconds=settings.timeout_seconds,
+        ) as client:
+            for index, query in enumerate(selected, start=1):
+                if index > 1:
+                    time.sleep(args.delay)
+
+                logger.info(
+                    "Сбор %s/%s: %s",
+                    index,
+                    len(selected),
+                    query.phrase,
+                )
+
+                try:
+                    result = client.top_requests(
+                        phrase=query.phrase,
+                        limit=args.top_limit,
+                    )
+                except WordStatError as exc:
+                    save_json(
+                        run_dir / f"{index:04d}.json",
+                        {
+                            "query": asdict(query),
+                            "collected_at": datetime.now(
+                                timezone.utc
+                            ).isoformat(),
+                            "status": "error",
+                            "error": str(exc),
+                        },
+                    )
+                    logger.error(
+                        "Сбор остановлен после ошибки: %s", exc
+                    )
+                    logger.info(
+                        "Успешно сохранено: %s. Папка: %s",
+                        completed,
+                        run_dir,
+                    )
+                    return 1
+
+                save_json(
+                    run_dir / f"{index:04d}.json",
+                    {
+                        "query": asdict(query),
+                        "collected_at": datetime.now(
+                            timezone.utc
+                        ).isoformat(),
+                        "status": "ok",
+                        "method": "topRequests",
+                        "response": result,
+                    },
+                )
+                completed += 1
+
+        logger.info(
+            "Готово. Сохранено: %s. Папка: %s",
+            completed,
+            run_dir,
+        )
+        return 0
+
+    except (ValueError, OSError, WordStatError) as exc:
+        logger.error("%s", exc)
+        return 1
 
 
 if __name__ == "__main__":

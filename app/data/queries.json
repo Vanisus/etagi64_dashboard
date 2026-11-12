@@ -1,0 +1,461 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "residential_purchase",
+      "name": "Покупка жилой недвижимости (Вторичный рынок и общие)"
+    },
+    {
+      "id": "new_buildings",
+      "name": "Новостройки (Первичный рынок)"
+    },
+    {
+      "id": "residential_rent",
+      "name": "Аренда жилой недвижимости"
+    },
+    {
+      "id": "country_property",
+      "name": "Загородная недвижимость (Дома, дачи, участки)"
+    },
+    {
+      "id": "mortgage",
+      "name": "Ипотека и финансирование"
+    },
+    {
+      "id": "commercial",
+      "name": "Коммерческая недвижимость"
+    },
+    {
+      "id": "real_estate_services",
+      "name": "Услуги на рынке недвижимости"
+    }
+  ],
+  "queries": [
+    {
+      "id": "purchase_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "купить квартиру саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_engels",
+      "category_id": "residential_purchase",
+      "phrase": "купить квартиру энгельс",
+      "enabled": true
+    },
+    {
+      "id": "sale_apartments_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "продажа квартир саратов",
+      "enabled": true
+    },
+    {
+      "id": "sale_apartments_engels",
+      "category_id": "residential_purchase",
+      "phrase": "продажа квартир энгельс",
+      "enabled": true
+    },
+    {
+      "id": "purchase_one_room_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "купить 1 комнатную квартиру саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_two_rooms_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "купить 2 комнатную квартиру саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_three_rooms_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "купить 3 комнатную квартиру саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_odnushka_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "купить однушку саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_dvushka_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "купить двушку саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_secondary_engels",
+      "category_id": "residential_purchase",
+      "phrase": "купить квартиру вторичка энгельс",
+      "enabled": true
+    },
+    {
+      "id": "purchase_avito_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "авито саратов квартиры купить",
+      "enabled": true
+    },
+    {
+      "id": "purchase_cian_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "циан саратов купить квартиру",
+      "enabled": true
+    },
+    {
+      "id": "purchase_cheap_engels",
+      "category_id": "residential_purchase",
+      "phrase": "купить квартиру недорого энгельс",
+      "enabled": true
+    },
+    {
+      "id": "purchase_no_agents_saratov",
+      "category_id": "residential_purchase",
+      "phrase": "купить квартиру без посредников саратов",
+      "enabled": true
+    },
+    {
+      "id": "new_buildings_saratov",
+      "category_id": "new_buildings",
+      "phrase": "новостройки саратов",
+      "enabled": true
+    },
+    {
+      "id": "new_buildings_engels",
+      "category_id": "new_buildings",
+      "phrase": "новостройки энгельс",
+      "enabled": true
+    },
+    {
+      "id": "purchase_new_building_saratov",
+      "category_id": "new_buildings",
+      "phrase": "купить квартиру в новостройке саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_developer_engels",
+      "category_id": "new_buildings",
+      "phrase": "купить квартиру от застройщика энгельс",
+      "enabled": true
+    },
+    {
+      "id": "complex_leto",
+      "category_id": "new_buildings",
+      "phrase": "жк лето",
+      "enabled": true
+    },
+    {
+      "id": "complex_legenda",
+      "category_id": "new_buildings",
+      "phrase": "жк легенда",
+      "enabled": true
+    },
+    {
+      "id": "complex_myata",
+      "category_id": "new_buildings",
+      "phrase": "жк мята",
+      "enabled": true
+    },
+    {
+      "id": "quarter_myata",
+      "category_id": "new_buildings",
+      "phrase": "квартал мята",
+      "enabled": true
+    },
+    {
+      "id": "complex_ilyinsky",
+      "category_id": "new_buildings",
+      "phrase": "жк ильинский",
+      "enabled": true
+    },
+    {
+      "id": "complex_ilyinsky_4",
+      "category_id": "new_buildings",
+      "phrase": "жк ильинский-4",
+      "enabled": true
+    },
+    {
+      "id": "complex_tsaritsynsky_iv",
+      "category_id": "new_buildings",
+      "phrase": "жк царицынский IV",
+      "enabled": true
+    },
+    {
+      "id": "complex_era",
+      "category_id": "new_buildings",
+      "phrase": "жк эра",
+      "enabled": true
+    },
+    {
+      "id": "complex_vega",
+      "category_id": "new_buildings",
+      "phrase": "жк вега",
+      "enabled": true
+    },
+    {
+      "id": "complex_garmoniya",
+      "category_id": "new_buildings",
+      "phrase": "жк гармония",
+      "enabled": true
+    },
+    {
+      "id": "complex_siyay_gorod",
+      "category_id": "new_buildings",
+      "phrase": "жк сияй-город",
+      "enabled": true
+    },
+    {
+      "id": "complex_bulgakovsky_park",
+      "category_id": "new_buildings",
+      "phrase": "жк эко-квартал булгаковский парк",
+      "enabled": true
+    },
+    {
+      "id": "complex_english_park",
+      "category_id": "new_buildings",
+      "phrase": "жк английский парк",
+      "enabled": true
+    },
+    {
+      "id": "complex_jamaica",
+      "category_id": "new_buildings",
+      "phrase": "жк ямайка",
+      "enabled": true
+    },
+    {
+      "id": "complex_egoist",
+      "category_id": "new_buildings",
+      "phrase": "жк эгоист",
+      "enabled": true
+    },
+    {
+      "id": "developers_saratov",
+      "category_id": "new_buildings",
+      "phrase": "застройщики саратова",
+      "enabled": true
+    },
+    {
+      "id": "sales_start_saratov",
+      "category_id": "new_buildings",
+      "phrase": "старт продаж новостроек саратов",
+      "enabled": true
+    },
+    {
+      "id": "luxury_property_saratov",
+      "category_id": "new_buildings",
+      "phrase": "элитная недвижимость саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_saratov",
+      "category_id": "residential_rent",
+      "phrase": "снять квартиру саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_engels",
+      "category_id": "residential_rent",
+      "phrase": "снять квартиру энгельс",
+      "enabled": true
+    },
+    {
+      "id": "rent_apartments_saratov",
+      "category_id": "residential_rent",
+      "phrase": "аренда квартир саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_no_agents_engels",
+      "category_id": "residential_rent",
+      "phrase": "снять квартиру без посредников энгельс",
+      "enabled": true
+    },
+    {
+      "id": "rent_one_room_saratov",
+      "category_id": "residential_rent",
+      "phrase": "снять 1 комнатную квартиру саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_long_term_engels",
+      "category_id": "residential_rent",
+      "phrase": "снять квартиру на длительный срок энгельс",
+      "enabled": true
+    },
+    {
+      "id": "rent_daily_flat_saratov",
+      "category_id": "residential_rent",
+      "phrase": "квартира на сутки саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_daily_saratov",
+      "category_id": "residential_rent",
+      "phrase": "посуточная аренда квартир саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_room_saratov",
+      "category_id": "residential_rent",
+      "phrase": "снять комнату саратов",
+      "enabled": true
+    },
+    {
+      "id": "house_saratov",
+      "category_id": "country_property",
+      "phrase": "купить дом саратов",
+      "enabled": true
+    },
+    {
+      "id": "house_engels",
+      "category_id": "country_property",
+      "phrase": "купить дом энгельс",
+      "enabled": true
+    },
+    {
+      "id": "sale_houses_saratov",
+      "category_id": "country_property",
+      "phrase": "продажа домов саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_house_saratov",
+      "category_id": "country_property",
+      "phrase": "снять дом саратов",
+      "enabled": true
+    },
+    {
+      "id": "dacha_engels",
+      "category_id": "country_property",
+      "phrase": "купить дачу энгельс",
+      "enabled": true
+    },
+    {
+      "id": "purchase_land_saratov",
+      "category_id": "country_property",
+      "phrase": "купить земельный участок саратов",
+      "enabled": true
+    },
+    {
+      "id": "sale_land_engels",
+      "category_id": "country_property",
+      "phrase": "продажа участков энгельс",
+      "enabled": true
+    },
+    {
+      "id": "purchase_cottage_saratov",
+      "category_id": "country_property",
+      "phrase": "купить коттедж саратов",
+      "enabled": true
+    },
+    {
+      "id": "mortgage_saratov",
+      "category_id": "mortgage",
+      "phrase": "ипотека саратов",
+      "enabled": true
+    },
+    {
+      "id": "family_mortgage_saratov",
+      "category_id": "mortgage",
+      "phrase": "семейная ипотека саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_mortgage_engels",
+      "category_id": "mortgage",
+      "phrase": "купить квартиру в ипотеку энгельс",
+      "enabled": true
+    },
+    {
+      "id": "subsidized_mortgage_saratov",
+      "category_id": "mortgage",
+      "phrase": "льготная ипотека на новостройки саратов",
+      "enabled": true
+    },
+    {
+      "id": "rural_mortgage_saratov_region",
+      "category_id": "mortgage",
+      "phrase": "сельская ипотека саратовская область",
+      "enabled": true
+    },
+    {
+      "id": "maternity_capital_saratov",
+      "category_id": "mortgage",
+      "phrase": "материнский капитал покупка жилья саратов",
+      "enabled": true
+    },
+    {
+      "id": "mortgage_rates_saratov",
+      "category_id": "mortgage",
+      "phrase": "ставки по ипотеке саратов",
+      "enabled": true
+    },
+    {
+      "id": "commercial_saratov",
+      "category_id": "commercial",
+      "phrase": "коммерческая недвижимость саратов",
+      "enabled": true
+    },
+    {
+      "id": "purchase_commercial_engels",
+      "category_id": "commercial",
+      "phrase": "купить коммерческую недвижимость энгельс",
+      "enabled": true
+    },
+    {
+      "id": "office_rent_saratov",
+      "category_id": "commercial",
+      "phrase": "аренда офиса саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_premises_saratov",
+      "category_id": "commercial",
+      "phrase": "снять помещение саратов",
+      "enabled": true
+    },
+    {
+      "id": "rent_warehouse_engels",
+      "category_id": "commercial",
+      "phrase": "аренда склада энгельс",
+      "enabled": true
+    },
+    {
+      "id": "purchase_shop_premises_saratov",
+      "category_id": "commercial",
+      "phrase": "купить помещение под магазин саратов",
+      "enabled": true
+    },
+    {
+      "id": "agency_saratov",
+      "category_id": "real_estate_services",
+      "phrase": "агентство недвижимости саратов",
+      "enabled": true
+    },
+    {
+      "id": "realtor_engels",
+      "category_id": "real_estate_services",
+      "phrase": "риэлтор энгельс",
+      "enabled": true
+    },
+    {
+      "id": "realtor_services_saratov",
+      "category_id": "real_estate_services",
+      "phrase": "услуги риэлтора саратов",
+      "enabled": true
+    },
+    {
+      "id": "property_valuation_saratov",
+      "category_id": "real_estate_services",
+      "phrase": "оценка недвижимости саратов",
+      "enabled": true
+    },
+    {
+      "id": "sell_fast_saratov",
+      "category_id": "real_estate_services",
+      "phrase": "продать квартиру быстро саратов",
+      "enabled": true
+    }
+  ]
+}
