@@ -7,11 +7,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /srv
 COPY app/requirements.txt app/requirements.txt
-RUN pip install -r app/requirements.txt
+RUN python -m pip install \
+    --timeout 120 \
+    --retries 5 \
+    -r app/requirements.txt
+
 COPY alembic.ini ./
 COPY migrations migrations
+
 COPY app app
 RUN useradd --system --uid 10001 --no-create-home etagi
 USER etagi
+
 EXPOSE 8000
 CMD ["uvicorn", "app.api.application:app", "--host", "0.0.0.0", "--port", "8000"]
