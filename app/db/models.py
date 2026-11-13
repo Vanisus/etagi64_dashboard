@@ -99,7 +99,7 @@ class CollectionRun(Base):
     __table_args__ = (
         CheckConstraint(
             "status IN "
-            "('running', 'completed', 'failed', 'interrupted')",
+            "('queued', 'running', 'completed', 'failed', 'interrupted')",
             name="ck_collection_runs_status",
         ),
     )
@@ -118,7 +118,7 @@ class CollectionRun(Base):
     status: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
-        default="running",
+        default="queued",
     )
 
     started_at: Mapped[datetime] = mapped_column(

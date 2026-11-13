@@ -18,7 +18,8 @@ from app.db.async_session import (
     get_async_session,
 )
 from app.db.models import City, User
-
+from app.api.catalog import router as catalog_router
+from app.api.statistics import router as statistics_router
 
 settings = get_auth_settings()
 
@@ -30,11 +31,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Et agi Dashboard".replace("Et agi", "Etagi"),
-    version="0.1.0",
+    title="Etagi Dashboard",
+    version="0.2.0",
     lifespan=lifespan,
 )
-
+app.include_router(catalog_router)
+app.include_router(statistics_router)
 
 @app.middleware("http")
 async def check_write_origin(request: Request, call_next):
