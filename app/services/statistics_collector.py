@@ -39,7 +39,12 @@ def collect_run(run_id: UUID, stop_event: Event | None = None, check_lock=None) 
         return
     settings = load_settings()
     failures = 0
-    with WordStatClient(settings.api_key, settings.folder_id, settings.timeout_seconds) as client:
+    with WordStatClient(
+            settings.api_key,
+            settings.folder_id,
+            settings.timeout_seconds,
+            min_interval=40.0,
+    ) as client:
         for query in parameters["selection"]:
             if stop_event is not None and stop_event.is_set():
                 finish_run(run_id, "interrupted", "Worker остановлен.")

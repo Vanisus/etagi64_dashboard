@@ -118,51 +118,178 @@ async def category_statistics(run_id: UUID, session: AsyncSession):
             "created_at": run.started_at, "finished_at": run.finished_at, "items": items}
 
 
-async def dashboard_categories(city_id: str, region_id: str | None, session: AsyncSession):
+async def dashboard_categories(
+    city_id: str,
+    region_id: str | None,
+    session: AsyncSession,
+):
     city = await session.get(City, city_id)
     if city is None:
         raise ServiceError(404, "Город не найден.")
+
     region_id = region_id or city.yandex_region_id
-    categories = (await session.scalars(select(Category).order_by(Category.name))).all()
-    current_queries = (await session.scalars(select(SearchQuery).where(
-        SearchQuery.city_id == city_id, SearchQuery.enabled.is_(True)).order_by(SearchQuery.id))).all()
+
+    categories = (
+        await session.scalars(
+            select(Category).order_by(Category.name)
+        )
+    ).all()
+
+    current_queries = (
+        await session.scalars(
+            select(SearchQuery)
+            .where(
+                SearchQuery.city_id == city_id,
+                SearchQuery.enabled.is_(True),
+            )
+            .order_by(SearchQuery.id)
+        )
+    ).all()
+
     current_counts = defaultdict(int)
     for query in current_queries:
         current_counts[query.category_id] += 1
-    active_run = await session.scalar(select(CollectionRun).where(
-        CollectionRun.method == "topRequests", CollectionRun.status.in_(["queued", "running"]),
-        CollectionRun.parameters["city_id"].astext == city_id, CollectionRun.parameters["region_id"].astext == region_id,
-    ).order_by(CollectionRun.started_at.desc(), CollectionRun.id.desc()).limit(1))
-    latest_run = await session.scalar(select(CollectionRun).where(
-        CollectionRun.method == "topRequests", CollectionRun.status == "completed",
-        CollectionRun.parameters["city_id"].astext == city_id, CollectionRun.parameters["region_id"].astext == region_id,
-        CollectionRun.parameters["category_id"].astext.is_(None),
-    ).order_by(CollectionRun.finished_at.desc(), CollectionRun.started_at.desc(), CollectionRun.id.desc()).limit(1))
+
+    active_run = await session.scalar(
+        select(CollectionRun)
+        .where(
+            CollectionRun.method == "topRequests",
+            CollectionRun.status.in_(["queued", "running"]),
+            CollectionRun.parameters["city_id"].astext == city_id,
+            CollectionRun.parameters["region_id"].astext == region_id,
+        )
+        .order_by(
+            CollectionRun.started_at.desc(),
+            CollectionRun.id.desc(),
+        )
+        .limit(1)
+    )
+
+    # Не выбираем полностью неудачный запуск вместо полезного снимка.
+    has_successful_results = (
+        select(QueryResult.run_id)
+        .where(
+            QueryResult.run_id == CollectionRun.id,
+            QueryResult.status == "ok",
+            QueryResult.total_count.is_not(None),
+        )
+        .exists()
+    )
+
+    # Берём последний завершившийся снимок с полезными данными,
+    # даже если часть запросов не прошла.
+    latest_run = await session.scalar(
+        select(CollectionRun)
+        .where(
+            CollectionRun.method == "topRequests",
+            CollectionRun.status.in_(
+                ["completed", "failed", "interrupted"]
+            ),
+            CollectionRun.finished_at.is_not(None),
+            CollectionRun.parameters["city_id"].astext == city_id,
+            CollectionRun.parameters["region_id"].astext == region_id,
+            CollectionRun.parameters["category_id"].astext.is_(None),
+            has_successful_results,
+        )
+        .order_by(
+            CollectionRun.finished_at.desc(),
+            CollectionRun.started_at.desc(),
+            CollectionRun.id.desc(),
+        )
+        .limit(1)
+    )
+
     base_response = {
-        "city_id": city.id, "city_name": city.name, "region_id": region_id,
-        "method": "topRequests", "window": "last_30_days",
-        "active_run": {"id": active_run.id, "status": active_run.status,
-                       "category_id": active_run.parameters.get("category_id")} if active_run is not None else None,
+        "city_id": city.id,
+        "city_name": city.name,
+        "region_id": region_id,
+        "method": "topRequests",
+        "window": "last_30_days",
+        "active_run": (
+            {
+                "id": active_run.id,
+                "status": active_run.status,
+                "category_id": active_run.parameters.get("category_id"),
+            }
+            if active_run is not None
+            else None
+        ),
     }
+
     if latest_run is None:
-        return {**base_response, "has_data": False, "run_id": None, "updated_at": None, "catalog_changed": None,
-                "items": [{"category_id": category.id, "category_name": category.name,
-                           "current_queries": current_counts[category.id], "expected_queries": 0,
-                           "successful_queries": 0, "complete": False, "average_frequency": None}
-                          for category in categories]}
+        return {
+            **base_response,
+            "has_data": False,
+            "run_id": None,
+            "updated_at": None,
+            "catalog_changed": None,
+            "items": [
+                {
+                    "category_id": category.id,
+                    "category_name": category.name,
+                    "current_queries": current_counts[category.id],
+                    "expected_queries": 0,
+                    "successful_queries": 0,
+                    "complete": False,
+                    "average_frequency": None,
+                }
+                for category in categories
+            ],
+        }
+
     statistics = await category_statistics(latest_run.id, session)
-    statistics_by_category = {item["category_id"]: item for item in statistics["items"]}
-    snapshot_signature = {(item["id"], item["phrase"], item["category_id"], item.get("city_id"))
-                          for item in latest_run.parameters.get("selection", [])}
-    current_signature = {(item.id, item.phrase, item.category_id, item.city_id) for item in current_queries}
+    statistics_by_category = {
+        item["category_id"]: item
+        for item in statistics["items"]
+    }
+
+    snapshot_signature = {
+        (
+            item["id"],
+            item["phrase"],
+            item["category_id"],
+            item.get("city_id"),
+        )
+        for item in latest_run.parameters.get("selection", [])
+    }
+
+    current_signature = {
+        (
+            query.id,
+            query.phrase,
+            query.category_id,
+            query.city_id,
+        )
+        for query in current_queries
+    }
+
     items = []
     for category in categories:
         saved = statistics_by_category.get(category.id)
-        items.append({"category_id": category.id, "category_name": category.name,
-                      "current_queries": current_counts[category.id],
-                      "expected_queries": saved["expected_queries"] if saved else 0,
-                      "successful_queries": saved["successful_queries"] if saved else 0,
-                      "complete": saved["complete"] if saved else False,
-                      "average_frequency": saved["average_frequency"] if saved else None})
-    return {**base_response, "has_data": True, "run_id": latest_run.id, "updated_at": latest_run.finished_at,
-            "catalog_changed": snapshot_signature != current_signature, "items": items}
+
+        items.append(
+            {
+                "category_id": category.id,
+                "category_name": category.name,
+                "current_queries": current_counts[category.id],
+                "expected_queries": (
+                    saved["expected_queries"] if saved else 0
+                ),
+                "successful_queries": (
+                    saved["successful_queries"] if saved else 0
+                ),
+                "complete": saved["complete"] if saved else False,
+                "average_frequency": (
+                    saved["average_frequency"] if saved else None
+                ),
+            }
+        )
+
+    return {
+        **base_response,
+        "has_data": True,
+        "run_id": latest_run.id,
+        "updated_at": latest_run.finished_at,
+        "catalog_changed": snapshot_signature != current_signature,
+        "items": items,
+    }
