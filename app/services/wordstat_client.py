@@ -101,7 +101,19 @@ class WordStatClient:
         return payload
 
     def _post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
-        logger.info("WordStat request: method=%s, phrase=%r", path, payload.get("phrase"))
+        logger.info(
+            "WordStat request: method=%s phrase=%r period=%r "
+            "fromDate=%r toDate=%r regions=%r devices=%r folderId_present=%s",
+            path,
+            payload.get("phrase"),
+            payload.get("period"),
+            payload.get("fromDate"),
+            payload.get("toDate"),
+            payload.get("regions"),
+            payload.get("devices"),
+            bool(self._folder_id and self._folder_id.strip()),
+        )
+
         for attempt in range(self._max_retries + 1):
             delay = max(0.0, self._min_interval - (time.monotonic() - self._last_request))
             time.sleep(delay)
@@ -119,6 +131,23 @@ class WordStatClient:
             wait = min(float(retry_after), 30) if re.fullmatch(r"[0-9]+", retry_after) else min(2**attempt, 30)
             time.sleep(wait)
         logger.info("WordStat response: status=%s", response.status_code)
+        if not response.is_success:
+            error_body = response.text
+
+            # На случай, если сервер отразил заголовок авторизации.
+            authorization = self._http.headers.get("Authorization", "")
+            if authorization:
+                error_body = error_body.replace(authorization, "[REDACTED]")
+
+                api_key = authorization.removeprefix("Api-Key ").strip()
+                if api_key:
+                    error_body = error_body.replace(api_key, "[REDACTED]")
+
+            logger.warning(
+                "WordStat error: status=%s body=%s",
+                response.status_code,
+                error_body[:12000],
+            )
         try:
             data = response.json()
         except ValueError as exc:
